@@ -58,7 +58,7 @@
 
 
 \begin{abstract}
-This document represent lecture notes for a set of computer science textbooks that cover the core of the computer science degree curriculum at the University of Washington in Seattle. The fundamentals of the curriculum include: CSE 143 Computer Programming 2, CSE 311, 312 Discrete math, CSE 331 Software Design and Implementation, Introduction to Algorithms, and CSE 351 Hardware/Software Interface; while the core of the Udub  CS curriculum include about 8 upper level courses. In these lecture notes I will cover compilers, and operating systems.
+This document represents lecture notes for a set of computer science textbooks that cover the core of the computer science degree curriculum at the University of Washington in Seattle. The fundamentals of the curriculum include: CSE 143 Computer Programming 2, CSE 311, 312 Discrete math, CSE 331 Software Design and Implementation, Introduction to Algorithms, and CSE 351 Hardware/Software Interface whereas the core of the University of Washington CS curriculum include about 8 upper level courses; but in these lecture notes I will cover compilers, and operating system in addition to the fundamentals.
 \end{abstract}
 
 \section{Discrete Math}
@@ -104,11 +104,10 @@ In the above \textbf{know-show-table} we ask, by working backwards (i.e from the
 
 \section{Hardware/Software interface}
 
-\subsection{Representing and Manipulating Information}
+\subsection{Representing and Manipulating Information, chap 2}
+Bytes are the smallest addressable unit of memory; a byte is 8 bits. In other words the byte is the fundamental unit of information. The processor of your computer only processes bytes; in fact, consider the following quote from the book "Computer Systems - A Programmer's Perspective": "A fundamental concept of computer systems is that a program, from the perspective of the machine, is a sequence of bytes; moreover, another key idea is that bytes are the unit with which machines communicate with one another through networks. A machine level program interacts with the virtual memory which is a large array of bytes. The machine level program does not interact directly with the physical memory. Every byte of memory has an address - the set of all addresses is called the virtual address space. Interestingly, a multi-byte object is stored as a contiguous sequence of  bytes; for example, in 64 bit architecture an integer in C is 4 bytes; if the address of the given int is 0x100, the given int will be stored in memory locations 0x100, 0x101, 0x102, and 0x103.
 
-Bytes are the smallest addressable unit of memory; a byte is 8 bits. In other words the byte is the fundamental unit of information. The processor of your computer only processes bytes; in fact, consider the following quote from the book "Computer Systems - A Pogrammer's Perspective": "A fundamental concept of computer systems is that a program, from the perspective of the machine, is a sequence of bytes; moreover, another key idea is that bytes are the unit with which machines communicate with one another through networks. A machine level program interacts with the virtual memory which is a large array of bytes. The machine level program does not interact directly with the physical memory. Every byte of memory has an address - the set of all addresses is called the virtual address space. Interestingly, a multi-byte object is stored as a contiguous sequence of  bytes; for example, in 64 bit architecture an integer in C is 4 bytes; if the address of the given int is 0x100, the given int will be stored in memory locations 0x100, 0x101, 0x102, and 0x103.
-
-\subsection{Machine Level Representation}
+\subsection{Machine Level Representation, chap 3}
 It is important to understand machine level representation because it will enable you to analyze how efficient your code is. By understanding how your code will be compiled to assembly code you will have a much better understanding of the performance of your program. When you are working with assembly code you are directly manipulating the 16 CPU registers; you are also interacting with the program counter. Now lets explore how different high level programming constructs are represented in assembly. Lets start with if statements. Consider this C program: 
 
 \begin{lstlisting}[language=C]
@@ -162,7 +161,6 @@ long fact_while(long n)
 }
 
 \end{lstlisting}
-
 The above code generates the following assembly:
 
 \begin{lstlisting}
@@ -180,7 +178,6 @@ long fact_while(long n)
 	  rep; ret		Return
 \end{lstlisting}
 Before saying something about how procedures get compiled to assembly code, I would like to say something about the stack. The stack is dynamic -- it grows as functions get called and the space that was allocated will be freed as the function returns. Stack memory behaves just like the stack data structure -- i.e., last-in, first out. 
-
 Here is the example in C:
 
 \begin{lstlisting}[language=C]
@@ -219,7 +216,7 @@ long caller()
 	ret Return
 \end{lstlisting}
 
-\subsection{The Memory Hierarchy}
+\subsection{The Memory Hierarchy, chap 6}
 Memory can be seen as layers of increasingly slower memory layers; at the top of the memory hierarchy you have registers, and then cache layers, then the memory layer, and then the disk, and the disk in remote network servers. Each level k, starting from L0, uses level k+1 to retrieve data. So, interestingly the local disk retrieves from the disk in the remote servers; this was insightful for me because it connected network applications such web apps to the rest of the system. With respect to clock cycles, the processor takes 0, 4, hundreds of cycles to read from registers, cache, and memory respectively. This is why register allocation is so important in compilers and why register allocation improves the compiler performance -- i.e., it is more efficient to retrieve from registers than memory. As programmers, if we want to write efficient programs we should aim at writing programs with good locality. A program has good temporal locality if the instructions in a loop execute during each iteration of the loop whereas spatial locality refers when memory is accessed sequentially. Consider the following program.
 
 \begin{lstlisting}[language=C]
@@ -261,5 +258,8 @@ int sumarraycols(int a[M][N])
 }  
 \end{lstlisting}
 This function above has poor spatial locality because it references the array column by column so it has a stride-N reference pattern. As to what cache hits and cache misses mean, a cache hit is when a program looks for an item d in level k+1 but finds d in level k. Conversely, a cache miss is when d is not found in level k but instead is found in level k+1. Recall that higher levels in the memory hierarchy are faster. Here is a quote from "Computer Systems, A Programmer's Perspective": "Programs with better locality will tend to have lower miss rates, and programs with lower miss rates will tend to run faster than programs with higher miss rates. Thus, good programmers should always try to write code that is cache friendly, in the sense that it has good locality." With respect to how compilers work, any respectable optimizing compiler will cache local variables with good temporal locality in the register file. "In general, if a cache has a block size of B bytes, then a stride-k reference pattern (where k is expressed in words) results in an average of min (1, (word size × k)/B) misses per loop iteration. This is minimized for k = 1, so the stride-1 references to v are indeed cache friendly."
+
+\subsection{Exceptional Control Flow, chap 8}
+I was familiar with this chapter because I have basic OS knowledge but a few things stood out. Firstly, the processor has control flow. From the time the computer gets turned on to the time it shuts down the processor fetches instructions and executes them one at a time. This sequence is the control flow. The control flow can be altered by the program state - i.e., jumps, branches, call, return. But other changes to the control flow react to system changes such as data arriving from disk or network adapter. This type of change in the control flow due to system changes is known as exceptional control flow; there is two mechanisms for exceptional control flow: exceptions and higher level mechanisms such as context switch. Exceptions happen in response to a significant change in the processors  state -- e.g., virtual memory page fault occurs, an arithmetic overflow occurs, or an instruction attempts a divide by zero. Control flow passes from one process to another via context switch.
 
 \end{document}
