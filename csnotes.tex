@@ -275,4 +275,29 @@ Often process needs to communicate with other process because they may need to a
 
 \subsection{Memory Management}
 The job of the memory manager is to keep track of the parts of memory that are being used, to allocate memory to processes and to deallocate memory when the processes are done with it. How does the memory manager accomplish this? It does this through an abstraction mechanism known as virtual memory. As discussed above a process is an abstraction for a program; likewise, an address space is abstraction of main memory -- it gives the illusion that each process has its own main memory. The set of addresses that a process can use to address memory is called the address space. A further extension of this is called virtual memory whereby a computer can work with programs that have more memory than what the computer is capable; the basic idea behind main memory is that a process has its own address space which is layed out as pages where a page is a contiguous range of memory addresses. How does the memory manager manage free memory? Free memory is managed by a bitmap; in a bitmap memory is divided by allocation units where each allocation unit is either free or being used. A free unit is denoted by a bit 0 whereas a unit being used is denoted bit 1. When a k unit process asks for memory the memory manager needs to allocate consecutive k 0 bits. A further question to ask now is how is this implemented in C. One thing to keep in mind is the programs refer to memory addresses which programming in assembly makes explicit with the statement `mov 1000, reg`. So, programs generate addresses which are called virtual addresses if a system has virtual memory. Virtual address then get translated to physical memory addresses.
+
+\section{Computer Architecture}
+A computer can be seen a hierarchy of layers: digital logic level, microarchitecture level, ISA level and Operating System level. The digital logic level is the lowest level whose circuits, made of transistors, carry out the machine level program of the the microarchitecture level. On the other hand the microarchitecture level consists of a circuit called the Arithmetic Logic Unit and a set of registers that form a memory; The ALU and memory form a data path which data flows. At this level there exists a microprogram that executes the instructions the next level up--namely, the instruction set level. The next level up is the operating system level; the operating system manages the resources.
+
+\subsection{Computer Systems Organization}
+A computer is built from processors, memory, and i/o devices.
+\subsubsection{Processor}
+The processor is comprised of the control unit, the arithmetic logic unit, and a set of registers; the control unit is responsible of fetching instructions from main memory, the ALU
+is responsible of doing arithmetic and the registers hold the ALU input. The registers feed into ALU input registers which hold the ALU input while the ALU is performing some computation. There is also ALU output registers which hold the output of the ALU and whose data can be sent to registers again or written to memory. How does the cpu carry out the instructions?
+
+\begin{lstlisting}
+1. Fetch the next instruction from memory into the instruction register.
+2. Change the program counter to point to the following instruction.
+3. Determine the type of instruction just fetched.
+4. If the instruction uses a word in memory, determine where it is.
+5. Fetch the word, if needed, into a CPU register.
+6. Execute the instruction.
+7. Go to step 1 to begin executing the following instruction
+\end{lstlisting}
+
+Instruction level parallelism is a process whereby the processor executes more instructions per second; it does this by implementing pipelining where more stuff gets done in less processor cycles. Instruction level parallelism is exploited in compilers.
+
+\subsubsection{Main Memory}
+The basic unit of memory is the bit; a bit can either be 0 or 1. Main memory is comprised of cells or locations which have addresses. The operating system's virtual memory abstracts all this. Memory is slower than CPU and as a consequence it takes hundreds of cycles to fetch from memory. A solution to this is cache memory which is considerably faster than main memory --- taking the processor only a few cycles to fetch from cache memory.
+
 \end{document}
