@@ -7,7 +7,7 @@ lecture notes for a big chunk of the CS curriculum at the University of Washingt
 ## dependemcies
 ### Arch Linux
 * `sudo pacman -Syu`
-* `sudo pacman -S texlive-most
+* `sudo pacman -S texlive-most`
 
 ### Ubuntu
 [read this](https://linuxhint.com/install-latex-ubuntu/)
