@@ -265,6 +265,173 @@ This function above has poor spatial locality because it references the array co
 I was familiar with this chapter because I have basic OS knowledge but a few things stood out. Firstly, the processor has control flow. From the time the computer gets turned on to the time it shuts down the processor fetches instructions and executes them one at a time. This sequence is the control flow. The control flow can be altered by the program state - i.e., jumps, branches, call, return. But other changes to the control flow react to system changes such as data arriving from disk or network adapter. This type of change in the control flow due to system changes is known as exceptional control flow; there is two mechanisms for exceptional control flow: exceptions and higher level mechanisms such as context switch. Exceptions happen in response to a significant change in the processors  state -- e.g., virtual memory page fault occurs, an arithmetic overflow occurs, or an instruction attempts a divide by zero. Control flow passes from one process to another via context switch.
 
 \section{Compilers}
+Compilers can be seen as a composition of a front-end, optimizer, and back-end. In these notes I will skip the optimizer. At a high level the front-end takes as input the source language and produces an \textit{abstract syntax tree}. An AST is a tree whose nodes represent each component of the given expression. The AST is then converted into a graph or is a lower AST. Each pass of the of the compiler lowers the AST closer to the assembly code. As to the back-end, there's instruction selection and register allocation. Instruction selection consists of taking a low AST as input and translating it into an even lower AST consisting of the target assembly code instructions -- e.g. x86-64. On the other hand register allocation consists of using registers to allocate the variables of the program but since there is very little registers you need to implement graph algorithms to use the CPUs registers for all the variables. Register allocation makes the compiler more efficient because the processor takes 0 cycles to fetch from registers as oppose to fetching from memory which take hundreds of cycles. Obviously, what I have written above is a very simplified explanation but in this section I am going to include some code. Consider compiling a very small subset of Scheme. Suppose we are compiling \textit{let} expressions and simple arithmetic. Here is a complete parser:
+
+\begin{lstlisting}[language=python]
+def parse_tree_to_ast(tree):
+    """
+    converts the parse tree into an abstract synstax tree.
+
+    @param tree: the parse tree
+    @returns: abstract syntax tree
+    """
+    match tree:
+        case x if isinstance(x, lark.tree.Tree):
+            if tree.data == 'start':
+                return [make_parse_tree(x) for x in tree.children]
+            
+            elif tree.data == 'let':
+                let_exps = [make_parse_tree(x) for x in tree.children]
+                if len(let_exps) == 2:
+                    let_bindings = let_exps[0]
+                    let_body = let_exps[1]
+                    return Let(let_bindings, let_body)
+                else:
+                    length = len(let_exps)
+                    let_bindings = let_exps[:length-1]
+                    let_body = let_exps[length-1]
+                    return Let(let_bindings, let_body)
+            elif tree.data == 'binding':
+                return Binding([make_parse_tree(x) for x in tree.children])
+            else:
+                return List([make_parse_tree(x) for x in tree.children])
+
+        case x if isinstance(x, lark.lexer.Token):
+            ty = tree.type.lower()
+            if ty == 'atom':
+                return Atom(tree.value)
+
+            else:
+                return Int(tree.value)
+    
+\end{lstlisting}
+The above program takes a parse tree and converts it into an AST whose nodes are represented by Python classes. The generated AST then goes through multiple passes which transform one ast to a lower ast; for example, here is an example of the main passes:
+
+\begin{lstlisting}[language=python]
+
+def uniquify(ast, lets_dict, counter):
+    """ 
+     given a let expression that is nested this pass ensures that each var is
+    unique.
+
+    param: ast
+    returns: a uniquified pass ast
+
+    Example:
+        (let ((x 2)) (+ (let ((x 5)) x) x))
+        -> 
+        (let ((x.1 2)) (+ (let ((x.2 5)) x.2) x.1))
+
+    Example 2:
+        (let ((x 1)) (+ (let ((x 4)) (+ (let ((x 5)) x) x)) x))
+        ->
+        (let ((x.1 1)) (+ (let ((x.2 4)) (+ (let ((x.3)) x.3) x.2) x.1))
+    
+    Example 3:
+        (let ((x 1)) (+ (let ((x 4)) (+ (let ((x 5)) (+ (let ((x 6)) x) x)) x)) x))
+        ->
+        (let ((x.1 1)) (+ (let ((x.2 4)) (+ (let ((x.3 5)) (+ (let ((x.4 6)) x.4) x.3)) x.2)) x.1))
+    """
+    ...
+
+def remove_complex(ast):
+    """
+    removes the complex expressions resulting only in atomic expressions.
+
+    @params ast: the ast transformed by the `uniquify` pass
+    @returns: ast with atomic expressions
+
+    Example:
+        (+ 53 (- 10)) -> (let ((temp.1 (- 10))) (+ 53 temp.1))
+
+    Example 2:
+        (let ((x (+ 10 (- 3))) x))
+        ->
+        (let ((x (let ((temp.1 (- 3))) (+ 10 temp.1))) x)
+
+    """
+    ...
+
+def explicate_control(ast, counter, vars, assignments):
+    """
+    Make order of execution clear.
+
+    @param ast
+    @param counter: counter for dictionaries
+    @param vars: dict
+    @param assignments: dict
+    @returns: ast with clear order of exceution
+
+    Example:
+       (let ((x.1 2)) (+ (let ((x.2 5)) x.2) x.1))
+       ->
+       start:
+         x.1 = 2
+         x.2 = 5
+         return x.1 + x.2
+
+    Example 2:
+        (let ((x.1 1)) (+ (let ((x.2 4)) (+ (let ((x.3 5)) x.3) x.2) x.1))
+        ->
+        start:
+           x.1 = 1
+           x.2 = 4
+           x.3 = 5
+           return x.1 + x.2 + x.4
+
+    Example 3:
+       (let ((temp.1 (- 10))) (+ 53 temp.1))
+       ->
+       start:
+          temp.1 = - 10
+          return 53 + temp1
+
+    Example 4:
+        (let ((x (let ((temp.1 (- 3))) (+ 10 temp.1))) x)
+        ->
+        start:
+            temp1 = - 3
+            x = 10 + temp1
+            return x
+    Example 5:
+         (+ 3 4)
+    """
+
+def select_instructions(ast):
+    """
+    makes the assembly instructions explicit.
+
+    @param ast
+    @returns: assembly (x86-64) based ast.
+
+    Example:
+        start:
+         x.1 = 2
+         x.2 = 5
+         return x.1 + x.2
+        ->
+        movq 2, x
+        addq 5, x
+        retq
+
+    Example 2:
+         start:
+           x.1 = 1
+           x.2 = 4
+           x.3 = 5
+           return x.1 + x.2 + x.4
+        ->
+        movq 1, x1
+        addq 4, x1
+        addq 5, x1
+        retq
+
+    """
+    ...
+    
+\end{lstlisting}
+As you can see above each pass lowers the ast to a much lower level. Take a look at the examples in each function so you can get an idea of what is doing. Given a Scheme \textit{let} expression you transform it, pass by pass, to a sequence of instructions which resemble how assembly works. As explained above the \textit{select instructions} pass lowers the ast into explicit x86-64 instructions.
+
 \section{Operating Systems}
 
 \subsection{Processes and Threads}
@@ -305,5 +472,5 @@ The basic unit of memory is the bit; a bit can either be 0 or 1. Main memory is 
 Gates are tiny electronic devices that can compute binary functions; some examples include the not, and, or, and xor gates. Interestingly, a signal between 0 and 0.5 volts corresponds to binary 0 and a signal between 1 and 1.5 volts corresponds to binary 1. From these gates bigger circuits are built -- e.g, memory, adders, CPUs. A key question here is what are clocks and how are clocks related to the performance of a given processor? A clock is a circuit that emits a series of pulses with a precise pulse width and precise interval between consecutive pulses. The time interval between two consecutive pulses is called the clock cycle time; pulse frequencies range from 100Mhz and 4Ghz corresponding to 10 nsec to 250 psec.
 
 \subsubsection{Processor Architecture}
-How does the operating system and processor architecture related? Y86-64 (simplified x86-64 version) reference memory locations using virtual addresses; virtual addresses then get mapped to physical memory. One question I have is how do virtual addresses get mapped to physical addresses? And how are virtual addresses related to virtual memory? I think the answer to this second question is that virtual memory is an abstraction for main memory; that is, virtual memory provides the illusion that a given program in execution (i.e., process) has its own memory; virtual memory is laid out as locations or cells; each location has an address; the set of all addresses is collectively called the virtual address space. How is virtual memory implemented in the OS?  The instructions, registers that you can access as a programmer is called the programmer-visible-state. This also includes the compiler which generates the assembly code. How is the processor exposed to the programmer? The source and destination of the the `movq` instruction consists of the immediate, registers, or memory; however, only registers and memory are destinations. This reflects the memory hierarchy: registers are faster than memory; remember, from fastest to slowest you have registers, cache, and memory which take respectively 0, 4, hundreds of cycles; and remember, a clock is a circuit that emits pulses with a precise pulse width and a time interval between consecutive pulses. The time interval between two consecutive pulses is called the clock cycle time; pulse frequencies range from 100Mhz and 4Ghz corresponding to 10 nsec to 250 psec. This pulse frequency falls in the range of 4ghz. A lot events happen during a given clock cycle. Gates are combined into combinational circuits that perform a much more complex function; these circuits operate on data words. On the other hand, memory and storage devices are controlled by clocks; another definition of a clock is a signal that determines when new data are to be loaded into the devices. Every instruction is executed through the five stages mentioned above during one clock cycle; here is a quote from \textit{Computer Systems - A Programmers Perspective}: "We are left with just four hardware units that require an explicit control over their sequencing—the program counter, the condition code register, the data memory, and the register file. These are controlled via a single clock signal that triggers the loading of new values into the registers and the writing of values to the random access memories. The program counter is loaded with a new instruction address every clock cycle. The condition code register is loaded only when an integer operation instruction is executed. The data memory is written only when an rmmovq, pushq, or call instruction is executed. The two write ports of the register file allow two program registers to be updated on every cycle, but we can use the special register ID 0xF as a port address to indicate that no write should be performed for this port."
+How are the operating system and processor architecture related? Y86-64 (simplified x86-64 version) reference memory locations using virtual addresses; virtual addresses then get mapped to physical memory. One question I have is how do virtual addresses get mapped to physical addresses? And how are virtual addresses related to virtual memory? I think the answer to this second question is that virtual memory is an abstraction for main memory; that is, virtual memory provides the illusion that a given program in execution (i.e., process) has its own memory; virtual memory is laid out as locations or cells; each location has an address; the set of all addresses is collectively called the virtual address space. How is virtual memory implemented in the OS?  The instructions, registers that you can access as a programmer is called the programmer-visible-state. This also includes the compiler which generates the assembly code. How is the processor exposed to the programmer? The source and destination of the the `movq` instruction consists of the immediate, registers, or memory; however, only registers and memory are destinations. This reflects the memory hierarchy: registers are faster than memory; remember, from fastest to slowest you have registers, cache, and memory which take respectively 0, 4, hundreds of cycles; and remember, a clock is a circuit that emits pulses with a precise pulse width and a time interval between consecutive pulses. The time interval between two consecutive pulses is called the clock cycle time; pulse frequencies range from 100Mhz and 4Ghz corresponding to 10 nsec to 250 psec. This pulse frequency falls in the range of 4ghz. A lot events happen during a given clock cycle. Gates are combined into combinational circuits that perform a much more complex function; these circuits operate on data words. On the other hand, memory and storage devices are controlled by clocks; another definition of a clock is a signal that determines when new data are to be loaded into the devices. Every instruction is executed through the five stages mentioned above during one clock cycle; here is a quote from \textit{Computer Systems - A Programmers Perspective}: "We are left with just four hardware units that require an explicit control over their sequencing—the program counter, the condition code register, the data memory, and the register file. These are controlled via a single clock signal that triggers the loading of new values into the registers and the writing of values to the random access memories. The program counter is loaded with a new instruction address every clock cycle. The condition code register is loaded only when an integer operation instruction is executed. The data memory is written only when an rmmovq, pushq, or call instruction is executed. The two write ports of the register file allow two program registers to be updated on every cycle, but we can use the special register ID 0xF as a port address to indicate that no write should be performed for this port."
 \end{document}
