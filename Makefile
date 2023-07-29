@@ -1,4 +1,4 @@
 output: csnotes.tex
 	pdflatex csnotes.tex
 clean:
-	rm *.aux *.toc *.log
+	rm *.aux *.toc *.log *.out
