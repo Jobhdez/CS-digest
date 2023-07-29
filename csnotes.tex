@@ -750,13 +750,17 @@ As you can see above each pass lowers the ast to a much lower level. Take a look
 \chapter{Operating Systems}
 
 \section{Processes and Threads}
+<<<<<<< HEAD
 
 A process needs resources -- namely, CPU time, memory, files, and I/O devices. These resources are allocated to the process while it is running. How is the process concept related to web programming? Suppose there is a process running on the web browser and it is trying to send a request to the server. The process will take an URL as an input and it will then it will carry out the appropriate instructions and system calls to display the response (web page).
+=======
+>>>>>>> 11113204b7e73b6ca73366f639171240683cb80c
 
 A process is an abstraction for a program in execution; each process has it own address space and its memory is layed out as follows: text section, data section, heap and stack. The text section consists of the executable code, the data section consists of global variables, the stack consists of data storage associated with invocations of functions such as parameters, return address, and the heap is associated with dynamically memory storage such as when you allocate memory in C with malloc; for example, in an x86-64 if you were to loop over an array and print each element you would divide the program into \textit{.data} and \textit{.text} sections. In the \textit{.data} section you would declare and initialize the array and in the \textit{.text} section you would have the instructions. But to clarify, a program by itself is not a process; a program is a passive entity. In contrast a process is an active entity consisting of a program counter that points to the subsequent instruction and consisting of the contents of the registers. A thread is the execution control center of a given process. "A thread represents the basic unit of CPU utilization." There could be multiple threads per process. A thread has its own stack but shares the same address space with other threads. This makes sense because threads need to be aware of the same program. Ultimately, user level threads need to be mapped to kernel threads for the CPU to execute. There are several models of this, namely, many-to-one, one-to-one and many-to-many. As you might expect, when the model is many-to-one, many user threads get mapped to one kernel thread.
 
 \section{CPU Scheduling}
 
+<<<<<<< HEAD
 How does the kernel provide memory resources to processes? Page tables are the mechanism through which the kernel provides memory resources to the processes. A process requests memory from the kernel and in turn the memory is allocated. How does it do this? 
 
 The kernel time shares processes - it switches the CPUs among the processes. What happens when a process is not executing? The kernel saves the process' CPU registers and restores them once the process runs again. Multiplexing means switching a CPU from one process to another. Context switching means multiplexing. Why is scheduling important? Scheduling is important because operating systems run with more processes than the computer has CPUs. How does scheduling happen? In response to system calls or interrupts the kernel switches from one process to another by the following way. First, there's a user-kernel transition to the old process' kernel thread, a context switch to the current CPU's scheduler thread, a context switch to a new (the one the kernel is switching to) process kernel thread and a trap return to the user level processes the kernel was switching to. What happens when a process gives up the CPU? The process' kernel thread calls swtch to save its own context and return the scheduler context. I think this is why the kernel switches from the old user process kernel thread to the scheduler thread. Switching from one thread to a new one involves saving the registers on the old thread and restoring the registers of the new one. A scheduler is essentially a thread in the CPU. There is one scheduler thread per CPU. Each schedule thread has the scheduler function.
@@ -768,6 +772,12 @@ The CPU scheduler is responsible for deciding which processes to allocate to the
 
 \section{Interprocess Communication}
 
+=======
+The CPU scheduler is responsible for deciding which processes to allocate to the CPU. There are several algorithms for CPU scheduling; the simplest is a first come, first served algorithm in which the first process that requests the CPU gets allocated to the CPU; this is accomplished with the FIFO queue data structure; the first process in that enters the queue it is the first out of the queue. What is tremendously amazing about scheduling is that the user does not notice when the CPU switches from one process to another process. So, it is interesting to think how one would build this. Why does the cpu scheduler exists? In most operating systems there will be more processes than there are CPUs so there needs to be a way for the CPUs to work on all of these programs.
+
+\section{Interprocess Communication}
+
+>>>>>>> 11113204b7e73b6ca73366f639171240683cb80c
 Often process needs to communicate with other process because they may need to access main memory. This can lead to race conditions. A race condition happens when two or more processes are sharing data (from main memory for instance) and the final result depends on the order of the processes. If one process runs before another process it may change the result because the order is off. How do we avoid race conditions? The answer is mutual exclusion; mutual exclusion dictates that when two or more processes share memory the processes that are not using the shared data are excluded from accessing the data. Mutual exclusion is achieved by semaphores, mutexes. A semaphore is initialized to the number of resources; when a process wants to use a resource it calls the wait() function thereby decrementing the count. When the process releases a resource it performs a signal() thereby incrementing the count. When the count is 0 processes are blocked until it increments again. When a process modifies a semaphore value another process cannot access the same semaphore value -- i.e., cannot access the same resource.
 
 \section{Memory Management}
@@ -972,3 +982,8 @@ Given a connection between computers there are two protocol stacks involved. The
     \item Implement the TCP protocol
 \end{enumerate}
 \end{document}
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 11113204b7e73b6ca73366f639171240683cb80c
