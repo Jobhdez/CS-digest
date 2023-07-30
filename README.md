@@ -11,4 +11,4 @@ Lecture notes for a quick overview of multiple Computer Science textbooks that m
 [read this](https://linuxhint.com/install-latex-ubuntu/)
 
 ## How to get the pdf?
-* run `make`
+The latest version can be obtained by running  `make`.
