@@ -794,6 +794,11 @@ The buffer cache has two jobs: 1) ensures that only one copy of a disk block is 
 \subsection{Logging}
 Logging solves the problem of crashes during file system operations.
 
+\subsection{Block Allocator}
+File content and directory content are stored in disk blocks which are allocated from a free pool. So, the blocks that the buffer cache synchronizes contain file and directory content. The block allocator consists/maintains of a bitmap on the disk. Each bit in this bitmap corresponds to one block. If the bit is 0 then the block is free; otherwise, the block has content. The block allocator has two functions: `balloc` and `bfree` which allocates a block and frees a block respectively.
+
+\subsection{Questions}
+Some questions I have include: 1) How does the disk and memory interact to carry out the file system operations? 2) When I enter `mkdir math` how does the operating system create the directory and the disk space? In the block allocator above I mentioned that the block allocator has two functions: `balloc` and `bfree` so perhaps when you enter `mkdir math` you invoke a system call that ends up into a call to `balloc` which allocates a block in the bitmap. When you enter `rmdir math` a similar process happens but a system call ends up into a call to `bfree`. 3) How is a directory that contains directory and so on -- i.e., a tree of directories -- stored as blocks in the bitmap?
 \chapter{Computer Architecture}
 
 A computer can be seen a hierarchy of layers: digital logic level, micro-architecture level, ISA level and Operating System level. The digital logic level is the lowest level whose circuits, made of transistors, carry out the machine level program of the the microarchitecture level. On the other hand the microarchitecture level consists of a circuit called the Arithmetic Logic Unit and a set of registers that form a memory; The ALU and memory form a data path through which data flows. At this level there exists a microprogram that executes the instructions the next level up--namely, the instruction set level. The next level up is the operating system level; the operating system manages the resources. A computer is built from processors, memory, and i/o devices.
