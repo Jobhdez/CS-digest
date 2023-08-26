@@ -772,6 +772,8 @@ How does the kernel provide memory resources to processes? Page tables are the m
 
 The kernel time shares processes - it switches the CPUs among the processes. What happens when a process is not executing? The kernel saves the process' CPU registers and restores them once the process runs again. Multiplexing means switching a CPU from one process to another. Context switching means multiplexing. Why is scheduling important? Scheduling is important because operating systems run with more processes than the computer has CPUs. How does scheduling happen? In response to system calls or interrupts the kernel switches from one process to another by the following way. First, there's a user-kernel transition to the old process' kernel thread, a context switch to the current CPU's scheduler thread, a context switch to a new (the one the kernel is switching to) process kernel thread and a trap return to the user level processes the kernel was switching to. Each CPU has its own scheduler thread which makes sense since when swithcing from user porcess A to user process B there is a transition to the process' A kernel thread via a system call, a context switch to the scheduler thread, and a context switch to process' B kernel thread. So, this means that scheduling involes alteranting from thread to thread. And remember a thread is what exectutes the given process' instructions. Shares memory with other threads but has its own stack. What happens when a process gives up the CPU? The process' kernel thread calls swtch to save its own context and return the scheduler context. I think this is why the kernel switches from the old user process kernel thread to the scheduler thread. Switching from one thread to a new one involves saving the registers on the old thread and restoring the registers of the new one. A scheduler is essentially a thread in the CPU. There is one scheduler thread per CPU. Each schedule thread has the scheduler function.
 
+A timer interrupt drives context switching, i.e., the switch from one process to anothe process.
+
 The kernel maintains a page table for each process. Page tables enable the kernel to isolate the different process' address space and multiplex them into a single memory system. When the kernel context switches it also switches page tables. The page table for each given process describes the user address space; moreover, the kernel provides a page table that describes the kernel address space.
 
 
@@ -794,6 +796,16 @@ How do interrupts work? As mentioned above an interrupt stops the processor loop
 Interrupts in UNix terms are known as \textbf{traps}.
 
 How does xv6 and thus Unix invoke a system call? To invoke a system call a program indexes the interrupt descriptor table (IDT) by invoking the \textbf{int} n instruction where n is the index of the IDT.
+
+\section{Locking}
+xv6 runs on multiprocessors; this means that multiple CPUs are executing instructions independently and since there is only one \textbf{physical} address space and share data structures, xv6 needs a mechanism to keep them from interfering with one another. This is what \textbf{locking} accomplishes. A lock achieves mutual exclusion which makes sure that one CPU at a time can hold the lock. In turn, this allows careful treatment of the data structures.
+
+Since there is multiple processors, for a given line of code, multiple processors can exectue the line which will result in problems. Locking allows multiple processors excute the line of code without introducing unwanted changes to the data structure.
+
+The reason why we need locks is to prevent \textbf{race conditions}. Race conditions result from the ordering of excution of two or more processors that invalidates a data structure. A processor S may be operating on A but then processor T may work on A which will result in processor S working on a modified version of A, lets call it B.
+
+\subsection{deadlock}
+\textbf{deadlocks} involves the ordering of locks. Suppose a code path require to take out several locks. When this happens it is important that all code paths acquire the locks in the same order. Suppose theres to code paths and both paths need locks A and B. If code path 1 acquires locks in the order A, B and the other path acquires locks in the order B, A. This can result in a deadlock because when path 1 acquires lock A, path 2 will acquire B. As a result path 1 will wait for and path 2 will wait for A. Both path are waiting. In other words, a deadlock happens when two processors hold the lock that each of them needs.
 \section{File System}
 The file system exists to organize and store data; it is an abstraction of disk.
 
